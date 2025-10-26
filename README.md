@@ -159,32 +159,6 @@ After making changes, rebuild (`npm run build`) and redeploy.
 - Expand the protocol support with additional methods such as `tools/list` or `tools/call` if your client expects them.
 - Add automated tests for JSON-RPC handlers to keep the CPR content verified.
 
-## 8. Troubleshooting ChatGPT connector timeouts
-
-If the ChatGPT UI reports a timeout while you are registering this MCP server as a connector, work through the checklist below.
-
-1. **Confirm the service responds quickly.** Run a lightweight HEAD request from your terminal:
-   ```bash
-   curl -I https://<your-render-service>.onrender.com/
-   ```
-   You should receive a `200 OK` response with JSON headers in under a second. If this hangs, the Render service is not reachable.
-2. **Tail the Render logs during registration.** Open your service in the Render dashboard and switch to the **Logs** tab. Each inbound HTTP request now generates a timestamped log entry (for example, `2024-05-30T12:34:56.789Z GET /`). Trigger the connector setup again and confirm that Render logs show the attempt. No log entry usually means the request never reached your server (DNS, firewall, or service down).
-3. **Review HTTP status codes.** If you see `404` or `500` in the logs, double-check the paths you configured in ChatGPT. The connector should target the base URL or `/mcp` for JSON-RPC calls.
-4. **Verify the MCP endpoint manually.** Issue a sample JSON-RPC call while watching the logs:
-   ```bash
-   curl -X POST https://<your-render-service>.onrender.com/mcp \
-     -H "Content-Type: application/json" \
-     -d '{
-       "jsonrpc": "2.0",
-       "id": 1,
-       "method": "resources/list"
-     }'
-   ```
-   A valid response confirms the service is healthy; the timeout might then stem from incorrect connector configuration in ChatGPT.
-5. **Re-deploy if needed.** If the service stops responding entirely, redeploy on Render (`Deploys` tab → `Manual Deploy`) or push a new commit to trigger a fresh build.
-
-Following these steps should surface where the timeout occurs—network reachability, Render deployment issues, or an incorrect connector URL.
-
 ---
 
 Happy learning, and remember: ensure the area is safe **before** you begin CPR!

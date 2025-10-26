@@ -192,23 +192,12 @@ function handleJsonRpc(request: JsonRpcRequest): JsonRpcResponse {
   }
 }
 
-function respondJson(
-  res: ServerResponse,
-  statusCode: number,
-  payload: unknown,
-  method?: string
-): void {
+function respondJson(res: ServerResponse, statusCode: number, payload: unknown): void {
   const data = JSON.stringify(payload, null, 2);
   res.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
     "Access-Control-Allow-Origin": "*"
   });
-
-  if (method === "HEAD") {
-    res.end();
-    return;
-  }
-
   res.end(data);
 }
 
@@ -218,12 +207,12 @@ function handleRpcRequest(req: IncomingMessage, res: ServerResponse, body: strin
 
     if (Array.isArray(parsed)) {
       const responses = parsed.map((item) => handleJsonRpc(item));
-      respondJson(res, 200, responses, req.method);
+      respondJson(res, 200, responses);
       return;
     }
 
     const response = handleJsonRpc(parsed);
-    respondJson(res, 200, response, req.method);
+    respondJson(res, 200, response);
   } catch (error) {
     respondJson(res, 400, {
       jsonrpc: "2.0",
@@ -232,19 +221,12 @@ function handleRpcRequest(req: IncomingMessage, res: ServerResponse, body: strin
         code: -32700,
         message: error instanceof Error ? error.message : "Invalid JSON payload"
       }
-    }, req.method);
+    });
   }
-}
-
-function logRequest(req: IncomingMessage, pathname: string | undefined): void {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] ${req.method ?? "UNKNOWN"} ${pathname ?? req.url ?? "/"}`);
 }
 
 function handleHttpRequest(req: IncomingMessage, res: ServerResponse): void {
   const url = req.url ? new URL(req.url, `http://${req.headers.host ?? "localhost"}`) : undefined;
-
-  logRequest(req, url?.pathname);
 
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
@@ -256,7 +238,7 @@ function handleHttpRequest(req: IncomingMessage, res: ServerResponse): void {
     return;
   }
 
-  if ((req.method === "GET" || req.method === "HEAD") && url?.pathname === "/") {
+  if (req.method === "GET" && url?.pathname === "/") {
     respondJson(res, 200, {
       message: "CPR MCP Server is running.",
       endpoints: {
@@ -264,21 +246,21 @@ function handleHttpRequest(req: IncomingMessage, res: ServerResponse): void {
         resources: "/resources",
         prompts: "/prompts"
       }
-    }, req.method);
+    });
     return;
   }
 
-  if ((req.method === "GET" || req.method === "HEAD") && url?.pathname === "/resources") {
+  if (req.method === "GET" && url?.pathname === "/resources") {
     respondJson(res, 200, {
       resources: RESOURCES
-    }, req.method);
+    });
     return;
   }
 
-  if ((req.method === "GET" || req.method === "HEAD") && url?.pathname === "/prompts") {
+  if (req.method === "GET" && url?.pathname === "/prompts") {
     respondJson(res, 200, {
       prompts: PROMPTS
-    }, req.method);
+    });
     return;
   }
 
@@ -298,7 +280,7 @@ function handleHttpRequest(req: IncomingMessage, res: ServerResponse): void {
       code: -32601,
       message: "Route not found"
     }
-  }, req.method);
+  });
 }
 
 const port = Number.parseInt(process.env.PORT ?? "3000", 10);
