@@ -34,6 +34,16 @@ const SERVER_INFO = {
   version: "0.1.0"
 };
 
+function listActions(): JsonRpcSuccess {
+  return {
+    jsonrpc: "2.0",
+    id: null,
+    result: {
+      actions: []
+    }
+  };
+}
+
 function listResources(): JsonRpcSuccess {
   return {
     jsonrpc: "2.0",
@@ -110,7 +120,8 @@ const methodHandlers: Record<string, Handler> = {
       result: {
         server: SERVER_INFO,
         resources: RESOURCES.map(({ content, ...meta }) => meta),
-        prompts: PROMPTS
+        prompts: PROMPTS,
+        actions: []
       }
     };
   },
@@ -161,7 +172,11 @@ const methodHandlers: Record<string, Handler> = {
       ...response,
       id: request.id ?? null
     };
-  }
+  },
+  "actions/list": (request) => ({
+    ...listActions(),
+    id: request.id ?? null
+  })
 };
 
 function handleJsonRpc(request: JsonRpcRequest): JsonRpcResponse {
